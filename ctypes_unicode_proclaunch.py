@@ -306,8 +306,6 @@ if posix_or_nt() == 'nt':
             if not TerminateProcess(process_handle, 1):
                 raise ctypes.WinError(ctypes.get_last_error())
 
-        wait(process_handle)
-
     kill = terminate
 
 else:
@@ -545,25 +543,19 @@ else:
 
     def terminate(pid):
         # type: (int) -> None
-        # Send SIGTERM signal to terminate the process
+        # Send SIGTERM signal to terminate the process.
+        # Do not reap it here; callers can still call `wait(pid)`.
         if kill_(pid, 15) != 0:
             error_number = ctypes.get_errno()
             error_string = 'kill failed: %s' % strerror(error_number).decode('utf-8')
             raise OSError(error_number, error_string)
 
-        # Call waitpid to prevent process from becoming zombie
-        status = ctypes.c_int()
-        waitpid(pid, ctypes.byref(status), 0)
-
     def kill(pid):
         # type: (int) -> None
-        # Send SIGKILL signal to terminate the process
+        # Send SIGKILL signal to terminate the process.
+        # Do not reap it here; callers can still call `wait(pid)`.
         if kill_(pid, 9) != 0:
             error_number = ctypes.get_errno()
             error_string = 'kill failed: %s' % strerror(error_number).decode('utf-8')
             raise OSError(error_number, error_string)
-
-        # Call waitpid to prevent process from becoming zombie
-        status = ctypes.c_int()
-        waitpid(pid, ctypes.byref(status), 0)
 
