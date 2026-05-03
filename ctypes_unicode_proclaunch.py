@@ -483,6 +483,7 @@ else:
             close(read_fd)
 
             # Handle redirection
+            fds_to_close = set()  # type: set
             for redirected_fd, original_fd in zip(
                     [stdin_file_descriptor, stdout_file_descriptor, stderr_file_descriptor],
                     [STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO]):
@@ -497,7 +498,9 @@ else:
 
                         _exit(1)
                     elif redirected_fd not in [STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO]:
-                        close(redirected_fd)
+                        fds_to_close.add(redirected_fd)
+            for fd in fds_to_close:
+                close(fd)
 
             # Close write_fd
             close(write_fd)
@@ -533,11 +536,14 @@ else:
             error_string = 'waitpid failed: %s' % strerror(error_number).decode('utf-8')
             raise OSError(error_number, error_string)
 
-        # Decode exit status
+        # Decode exit status.
+        # Match Python's subprocess convention on POSIX:
+        #   * normal exit -> non-negative exit status
+        #   * signal exit -> negative signal number
         if WIFEXITED(status.value):
-            return WEXITSTATUS(status.value)  # Return exit code
+            return WEXITSTATUS(status.value)
         elif WIFSIGNALED(status.value):
-            raise OSError('Child killed by signal: %d' % WTERMSIG(status.value))
+            return -WTERMSIG(status.value)
         else:
             raise OSError('Child terminated abnormally')
 

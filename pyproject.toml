@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ctypes-unicode-proclaunch"
-version = "0.1.0a2"
+version = "0.1.0a3"
 description = "A minimal, robust, and Unicode-aware process launching library using ctypes."
 readme = "README.md"
 requires-python = ">=2"
